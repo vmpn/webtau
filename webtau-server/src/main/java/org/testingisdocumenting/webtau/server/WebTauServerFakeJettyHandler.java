@@ -35,7 +35,7 @@ public class WebTauServerFakeJettyHandler extends Handler.Abstract {
     public boolean handle(Request request, Response response, Callback callback) throws Exception {
         Optional<WebTauServerOverride> optionalOverride = WebTauServerGlobalOverrides.findOverride(serverId,
                 request.getMethod(),
-                request.getHttpURI().toURI().toString());
+                request.getHttpURI().getPath());
 
         if (!optionalOverride.isPresent()) {
             response.setStatus(404);
