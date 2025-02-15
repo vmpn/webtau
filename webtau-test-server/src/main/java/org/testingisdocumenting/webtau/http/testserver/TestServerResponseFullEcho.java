@@ -17,10 +17,12 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 import org.apache.commons.io.IOUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -38,14 +40,14 @@ public class TestServerResponseFullEcho implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) {
+    public byte[] responseBody(Request request) {
         try {
-            String input = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
+            String input = Content.Source.asString(request, StandardCharsets.UTF_8);
             Object parsedRequest = parsedOrAsIsResponse(input);
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("request", parsedRequest);
-            response.put("urlPath", request.getRequestURI());
-            response.put("urlQuery", request.getQueryString());
+            response.put("urlPath", request.getHttpURI().getPath());
+            response.put("urlQuery", request.getHttpURI().getQuery());
 
             response.putAll(echoHeaders(request));
 
@@ -57,12 +59,12 @@ public class TestServerResponseFullEcho implements TestServerResponse {
     }
 
     @Override
-    public Map<String, String> responseHeader(HttpServletRequest request) {
+    public Map<String, String> responseHeader(Request request) {
         return echoHeaders(request);
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         return "application/json";
     }
 

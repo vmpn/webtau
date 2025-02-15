@@ -1,10 +1,11 @@
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.ServletException;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 import org.apache.commons.io.IOUtils;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +15,7 @@ import java.util.Map;
 
 public class TestServerJsonDerivativeResponse implements TestServerResponse {
     @Override
-    public byte[] responseBody(HttpServletRequest request) throws IOException, ServletException {
+    public byte[] responseBody(Request request) throws IOException, ServletException {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "ok");
 
@@ -23,9 +24,9 @@ public class TestServerJsonDerivativeResponse implements TestServerResponse {
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         try {
-            String json = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
+            String json = Content.Source.asString(request, StandardCharsets.UTF_8);
             Map<String, ?> body = json.equals("") ? Collections.emptyMap() : JsonUtils.deserializeAsMap(json);
             return (String) body.get("contentType");
         } catch (IOException e) {

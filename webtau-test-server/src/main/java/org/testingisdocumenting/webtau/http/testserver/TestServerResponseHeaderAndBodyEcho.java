@@ -16,10 +16,13 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.testingisdocumenting.webtau.http.testserver.ResponseUtils.echoHeaders;
@@ -32,21 +35,21 @@ public class TestServerResponseHeaderAndBodyEcho implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) {
+    public byte[] responseBody(Request request) {
         try {
-            return IOUtils.toByteArray(request.getInputStream());
+            return IOUtils.toByteArray(Content.Source.asInputStream(request));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public Map<String, String> responseHeader(HttpServletRequest request) {
+    public Map<String, String> responseHeader(Request request) {
         return echoHeaders(request);
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         return "application/json";
     }
 

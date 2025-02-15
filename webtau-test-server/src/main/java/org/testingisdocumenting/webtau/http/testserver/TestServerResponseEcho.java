@@ -16,7 +16,9 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.server.Request;
 
 import static org.testingisdocumenting.webtau.http.testserver.ResponseUtils.echoBody;
 
@@ -28,13 +30,13 @@ public class TestServerResponseEcho implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) {
+    public byte[] responseBody(Request request) {
         return echoBody(request);
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
-        return request.getContentType();
+    public String responseType(Request request) {
+        return request.getHeaders().get(HttpHeader.CONTENT_TYPE);
     }
 
     @Override

@@ -20,15 +20,18 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.Fields;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +45,7 @@ https://graphql.org/learn/serving-over-http/.
 
 Note: In this handler, GraphQL endpoints must start with "/grapqhl".
  */
-public class GraphQLResponseHandler extends AbstractHandler {
+public class GraphQLResponseHandler extends Handler.Abstract {
     private final GraphQL graphQL;
     private final Optional<Handler> additionalHandler;
     private Optional<String> expectedAuthHeaderValue;
@@ -58,22 +61,22 @@ public class GraphQLResponseHandler extends AbstractHandler {
         this.expectedAuthHeaderValue = Optional.empty();
     }
 
-  /**
+
+    /**
    * If the endpoint starts with "/graphql", treat it as a GraphQL request, otherwise delegate to
    * the optional additionalHandler.
    */
     @Override
-    public void handle(String url, Request baseRequest, HttpServletRequest request,
-                       HttpServletResponse response) throws IOException, ServletException {
-        if (baseRequest.getOriginalURI().startsWith("/graphql")) {
+    public boolean handle(Request request, Response response, Callback callback) throws Exception {
+        if (request.getHttpURI().getPath().startsWith("/graphql")) {
             handleGraphQLPathRequest(request, response);
         } else if (additionalHandler.isPresent()) {
-            additionalHandler.get().handle(url, baseRequest, request, response);
+            additionalHandler.get().handle(request, response, callback);
         } else {
             response.setStatus(404);
         }
 
-        baseRequest.setHandled(true);
+        return true;
     }
 
     public <R> R withAuthEnabled(String expectedAuthHeaderValue, Supplier<R> code) {
@@ -99,23 +102,29 @@ public class GraphQLResponseHandler extends AbstractHandler {
         }
     }
 
-    private void handleGraphQLPathRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void handleGraphQLPathRequest(Request request, Response response) throws IOException {
         if (!isAuthenticated(request)) {
             response.setStatus(401);
             return;
         }
 
         if ("GET".equals(request.getMethod())) {
-            String query = request.getParameter("query");
-            String operationName = request.getParameter("operationName");
+            final Fields parameters;
+            try {
+                parameters = Request.getParameters(request);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            String query = parameters.getValue("query");
+            String operationName = parameters.getValue("operationName");
             @SuppressWarnings("unchecked")
-            Map<String, Object> variables = (Map<String, Object>) JsonUtils.deserializeAsMap(request.getParameter("variables"));
+            Map<String, Object> variables = (Map<String, Object>) JsonUtils.deserializeAsMap(parameters.getValue("variables"));
 
             handle(query, operationName, variables, response);
         } else if ("POST".equals(request.getMethod())) {
             // Don't currently support the query param for POST
-            if ("application/json".equals(request.getContentType())) {
-                Map<String, ?> requestBody = JsonUtils.deserializeAsMap(request.getReader().lines().collect(Collectors.joining()));
+            if ("application/json".equals(request.getHeaders().get(HttpHeader.CONTENT_TYPE))) {
+                Map<String, ?> requestBody = JsonUtils.deserializeAsMap(Content.Source.asString(request, StandardCharsets.UTF_8).lines().collect(Collectors.joining()));
 
                 String query = (String) requestBody.get("query");
                 String operationName = (String) requestBody.get("operationName");
@@ -123,8 +132,8 @@ public class GraphQLResponseHandler extends AbstractHandler {
                 Map<String, Object> variables = (Map<String, Object>) requestBody.get("variables");
 
                 handle(query, operationName, variables, response);
-            } else if ("application/graphql".equals(request.getContentType())) {
-                String query = request.getReader().lines().collect(Collectors.joining());
+            } else if ("application/graphql".equals(request.getHeaders().get(HttpHeader.CONTENT_TYPE))) {
+                String query = Content.Source.asString(request, StandardCharsets.UTF_8).lines().collect(Collectors.joining());
                 handle(query, (String) null, null, response);
             } else {
                 response.setStatus(415);
@@ -134,9 +143,9 @@ public class GraphQLResponseHandler extends AbstractHandler {
         }
     }
 
-    private boolean isAuthenticated(HttpServletRequest request) {
+    private boolean isAuthenticated(Request request) {
         return expectedAuthHeaderValue
-                .map(expectedVal -> expectedVal.equals(request.getHeader("Authorization")))
+                .map(expectedVal -> expectedVal.equals(request.getHeaders().get("Authorization")))
                 .orElse(true);
     }
 
@@ -144,7 +153,7 @@ public class GraphQLResponseHandler extends AbstractHandler {
             String query,
             String operationName,
             Map<String, Object> variables,
-            HttpServletResponse response) throws IOException {
+            Response response) throws IOException {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput(query)
                 .operationName(operationName)
                 .variables(variables == null ? Collections.emptyMap() : variables)
@@ -159,7 +168,7 @@ public class GraphQLResponseHandler extends AbstractHandler {
         }
 
         response.setStatus(successStatusCode);
-        response.setContentType("application/json");
-        response.getOutputStream().write(JsonUtils.serializeToBytes(responseBody));
+        response.getHeaders().add(HttpHeader.CONTENT_TYPE, "application/json");
+        response.write(true, ByteBuffer.wrap(JsonUtils.serializeToBytes(responseBody)), null);
     }
 }

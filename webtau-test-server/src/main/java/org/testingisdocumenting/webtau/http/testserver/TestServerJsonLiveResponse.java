@@ -16,9 +16,9 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.CollectionUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class TestServerJsonLiveResponse implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) {
+    public byte[] responseBody(Request request) {
         String response = requestIdx < responses.size() ? responses.get(requestIdx) : null;
         byte[] result = response == null ? null : response.getBytes();
         requestIdx++;
@@ -58,7 +58,7 @@ public class TestServerJsonLiveResponse implements TestServerResponse {
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         return "application/json";
     }
 
@@ -68,7 +68,7 @@ public class TestServerJsonLiveResponse implements TestServerResponse {
     }
 
     @Override
-    public Map<String, String> responseHeader(HttpServletRequest request) {
+    public Map<String, String> responseHeader(Request request) {
         return CollectionUtils.toStringStringMap(headerResponse);
     }
 }

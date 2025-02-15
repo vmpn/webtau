@@ -16,17 +16,18 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletException;
+import org.eclipse.jetty.server.Request;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
 public interface TestServerResponse {
-    byte[] responseBody(HttpServletRequest request) throws IOException, ServletException;
-    String responseType(HttpServletRequest request);
+    byte[] responseBody(Request request) throws IOException, ServletException;
+    String responseType(Request request);
 
-    default Map<String, String> responseHeader(HttpServletRequest request) {
+    default Map<String, String> responseHeader(Request request) {
         return Collections.emptyMap();
     }
 

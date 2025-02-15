@@ -16,19 +16,18 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FixedResponsesHandler extends AbstractHandler {
+public class FixedResponsesHandler extends Handler.Abstract {
     private final Map<String, TestServerResponse> getResponses = new HashMap<>();
     private final Map<String, TestServerResponse> patchResponses = new HashMap<>();
     private final Map<String, TestServerResponse> postResponses = new HashMap<>();
@@ -56,34 +55,30 @@ public class FixedResponsesHandler extends AbstractHandler {
     }
 
     @Override
-    public void handle(String url, Request baseRequest, HttpServletRequest request,
-                       HttpServletResponse response) throws IOException, ServletException {
+    public boolean handle(Request request, Response response, Callback callback) throws Exception {
 
         Map<String, TestServerResponse> responses = findResponses(request);
 
-        MultipartConfigElement multipartConfigElement = new MultipartConfigElement((String) null);
-        request.setAttribute(Request.MULTIPART_CONFIG_ELEMENT, multipartConfigElement);
-
-        TestServerResponse testServerResponse = responses.get(baseRequest.getOriginalURI());
+        TestServerResponse testServerResponse = responses.get(request.getHttpURI().toURI().toString());
         if (testServerResponse == null) {
             response.setStatus(404);
         } else {
-            testServerResponse.responseHeader(request).forEach(response::addHeader);
+            testServerResponse.responseHeader(request).forEach(response.getHeaders()::add);
 
             byte[] responseBody = testServerResponse.responseBody(request);
             response.setStatus(testServerResponse.responseStatusCode());
-            response.setContentType(testServerResponse.responseType(request));
+            response.getHeaders().add(HttpHeader.CONTENT_TYPE, testServerResponse.responseType(request));
 
             if (responseBody != null) {
-                response.setContentLength(responseBody.length);
-                response.getOutputStream().write(responseBody);
+                response.getHeaders().add(HttpHeader.CONTENT_LENGTH, responseBody.length);
+                response.write(true, ByteBuffer.wrap(responseBody), null);
             }
         }
 
-        baseRequest.setHandled(true);
+        return true;
     }
 
-    private Map<String, TestServerResponse> findResponses(HttpServletRequest request) {
+    private Map<String, TestServerResponse> findResponses(Request request) {
         switch (request.getMethod()) {
             case "GET":
                 return getResponses;

@@ -1,9 +1,10 @@
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.StringUtils;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,18 +26,18 @@ public class TestServerRedirectResponse implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) throws IOException, ServletException {
+    public byte[] responseBody(Request request) throws IOException, ServletException {
         String msg = "Redirecting to " + redirectUrl() + " with status code " + statusCode;
         return msg.getBytes();
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         return "application/text";
     }
 
     @Override
-    public Map<String, String> responseHeader(HttpServletRequest request) {
+    public Map<String, String> responseHeader(Request request) {
         Map<String, String> headers = new HashMap<>();
         headers.put("Location", redirectUrl());
         return headers;

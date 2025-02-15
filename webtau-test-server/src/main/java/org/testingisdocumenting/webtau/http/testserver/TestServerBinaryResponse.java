@@ -16,7 +16,11 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
-import javax.servlet.http.HttpServletRequest;
+
+import jakarta.servlet.ServletException;
+import org.eclipse.jetty.server.Request;
+
+import java.io.IOException;
 
 public class TestServerBinaryResponse implements TestServerResponse {
     private final byte[] content;
@@ -26,12 +30,12 @@ public class TestServerBinaryResponse implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) {
+    public byte[] responseBody(Request request) throws IOException, ServletException {
         return content;
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
-        return "application/octet-stream";
+    public String responseType(Request request) {
+       return "application/octet-stream";
     }
 }

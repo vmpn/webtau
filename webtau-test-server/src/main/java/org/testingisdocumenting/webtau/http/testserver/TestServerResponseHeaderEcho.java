@@ -17,9 +17,10 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 import static org.testingisdocumenting.webtau.http.testserver.ResponseUtils.echoHeaders;
@@ -32,18 +33,18 @@ public class TestServerResponseHeaderEcho implements TestServerResponse {
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) {
+    public byte[] responseBody(Request request) {
         Map<String, String> header = echoHeaders(request);
         return JsonUtils.serialize(header).getBytes();
     }
 
     @Override
-    public Map<String, String> responseHeader(HttpServletRequest request) {
+    public Map<String, String> responseHeader(Request request) {
         return echoHeaders(request);
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         return "application/json";
     }
 

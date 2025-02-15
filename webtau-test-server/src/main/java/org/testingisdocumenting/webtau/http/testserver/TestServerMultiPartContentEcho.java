@@ -16,35 +16,29 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.ServletException;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Part;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 
 public class TestServerMultiPartContentEcho implements TestServerResponse {
     private final int statusCode;
-    private int partIdx;
 
     public TestServerMultiPartContentEcho(int statusCode, int partIdx) {
         this.statusCode = statusCode;
-        this.partIdx = partIdx;
     }
 
     @Override
-    public byte[] responseBody(HttpServletRequest request) throws IOException, ServletException {
-        Collection<Part> parts = request.getParts();
-
-        Part part = new ArrayList<>(parts).get(partIdx);
-        return IOUtils.toByteArray(part.getInputStream());
+    public byte[] responseBody(Request request) throws IOException, ServletException {
+        return IOUtils.toByteArray(Content.Source.asInputStream(request));
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
-        return request.getContentType();
+    public String responseType(Request request) {
+        return request.getHeaders().get(HttpHeader.CONTENT_TYPE);
     }
 
     @Override

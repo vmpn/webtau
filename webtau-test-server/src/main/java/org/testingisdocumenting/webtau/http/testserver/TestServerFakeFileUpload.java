@@ -16,13 +16,15 @@
 
 package org.testingisdocumenting.webtau.http.testserver;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Part;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 import org.apache.commons.io.IOUtils;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Part;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,13 +32,13 @@ import java.util.Optional;
 
 public class TestServerFakeFileUpload implements TestServerResponse {
     @Override
-    public byte[] responseBody(HttpServletRequest request) throws IOException, ServletException {
-        Collection<Part> parts = request.getParts();
-        return JsonUtils.serialize(createResponse(parts)).getBytes();
+    public byte[] responseBody(Request request) throws IOException, ServletException {
+
+        return JsonUtils.serialize(Content.Source.asString(request, StandardCharsets.UTF_8)).getBytes();
     }
 
     @Override
-    public String responseType(HttpServletRequest request) {
+    public String responseType(Request request) {
         return "application/json";
     }
 
