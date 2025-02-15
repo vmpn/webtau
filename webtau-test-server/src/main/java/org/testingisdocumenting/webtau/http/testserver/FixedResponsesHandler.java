@@ -59,9 +59,10 @@ public class FixedResponsesHandler extends Handler.Abstract {
 
         Map<String, TestServerResponse> responses = findResponses(request);
 
-        TestServerResponse testServerResponse = responses.get(request.getHttpURI().toURI().toString());
+        TestServerResponse testServerResponse = responses.get(request.getHttpURI().getPathQuery());
         if (testServerResponse == null) {
             response.setStatus(404);
+            callback.succeeded();
         } else {
             testServerResponse.responseHeader(request).forEach(response.getHeaders()::add);
 
