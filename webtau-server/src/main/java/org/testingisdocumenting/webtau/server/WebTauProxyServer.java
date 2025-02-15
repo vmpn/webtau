@@ -56,12 +56,7 @@ public class WebTauProxyServer extends WebTauJettyServer {
 
     @Override
     protected Handler createJettyHandler() {
-        ServletHolder proxyServletHolder = new ServletHolder(new WebTauProxyServlet(getJournal(), urlToProxy));
-        proxyServletHolder.setInitParameter("maxThreads", String.valueOf(WebTauServersConfig.getProxyMaxThreads()));
-
-        ServletHandler handler = new ServletHandler();
-        handler.addServletWithMapping(proxyServletHolder, "/*");
-
-        return handler;
+//        proxyServletHolder.setInitParameter("maxThreads", String.valueOf(WebTauServersConfig.getProxyMaxThreads()));
+        return new WebTauProxyHandler(getJournal(), urlToProxy);
     }
 }
