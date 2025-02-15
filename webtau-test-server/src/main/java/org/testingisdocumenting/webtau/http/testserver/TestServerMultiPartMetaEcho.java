@@ -17,18 +17,15 @@
 package org.testingisdocumenting.webtau.http.testserver;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Part;
-import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.http.MultiPart;
 import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toList;
+import static org.testingisdocumenting.webtau.http.testserver.MultiPartUtils.getPartsStream;
 
 public class TestServerMultiPartMetaEcho implements TestServerResponse {
     private final int statusCode;
@@ -39,8 +36,8 @@ public class TestServerMultiPartMetaEcho implements TestServerResponse {
 
     @Override
     public byte[] responseBody(Request request) throws IOException, ServletException {
-
-        return JsonUtils.serialize(Content.Source.asString(request, StandardCharsets.UTF_8)).getBytes();
+        final var mappedParts = getPartsStream(request).map(this::partToMap).toList();
+        return JsonUtils.serialize(mappedParts).getBytes();
     }
 
     @Override
@@ -53,10 +50,10 @@ public class TestServerMultiPartMetaEcho implements TestServerResponse {
         return statusCode;
     }
 
-    private Map<String, Object> partToMap(Part part) {
+    private Map<String, Object> partToMap(MultiPart.Part part) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("fieldName", part.getName());
-        result.put("fileName", part.getSubmittedFileName());
+        result.put("fileName", part.getFileName());
 
         return result;
     }

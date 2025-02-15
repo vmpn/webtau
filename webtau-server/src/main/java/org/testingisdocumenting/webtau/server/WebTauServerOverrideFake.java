@@ -16,7 +16,7 @@
 
 package org.testingisdocumenting.webtau.server;
 
-import javax.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
 
 public class WebTauServerOverrideFake implements WebTauServerOverride {
     private final String method;
@@ -41,7 +41,7 @@ public class WebTauServerOverrideFake implements WebTauServerOverride {
     }
 
     @Override
-    public WebTauServerResponse response(HttpServletRequest request) {
+    public WebTauServerResponse response(Request request) {
         return fakeResponse;
     }
 }

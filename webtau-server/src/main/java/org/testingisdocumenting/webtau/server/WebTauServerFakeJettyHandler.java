@@ -16,16 +16,15 @@
 
 package org.testingisdocumenting.webtau.server;
 
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 
-public class WebTauServerFakeJettyHandler extends AbstractHandler {
+public class WebTauServerFakeJettyHandler extends Handler.Abstract {
     private final String serverId;
 
     public WebTauServerFakeJettyHandler(String serverId) {
@@ -33,20 +32,19 @@ public class WebTauServerFakeJettyHandler extends AbstractHandler {
     }
 
     @Override
-    public void handle(String url, Request baseRequest,
-                       HttpServletRequest servletRequest,
-                       HttpServletResponse servletResponse) throws IOException, ServletException {
+    public boolean handle(Request request, Response response, Callback callback) throws Exception {
         Optional<WebTauServerOverride> optionalOverride = WebTauServerGlobalOverrides.findOverride(serverId,
-                servletRequest.getMethod(),
-                servletRequest.getRequestURI());
+                request.getMethod(),
+                request.getHttpURI().toURI().toString());
 
         if (!optionalOverride.isPresent()) {
-            servletResponse.setStatus(404);
+            response.setStatus(404);
+            callback.succeeded();
         } else {
             WebTauServerOverride override = optionalOverride.get();
-            override.apply(servletRequest, servletResponse);
+            override.apply(request, response, callback);
         }
 
-        baseRequest.setHandled(true);
+        return true;
     }
 }

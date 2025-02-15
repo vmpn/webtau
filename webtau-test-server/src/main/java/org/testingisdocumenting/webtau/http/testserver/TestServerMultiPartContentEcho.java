@@ -24,16 +24,26 @@ import org.eclipse.jetty.server.Request;
 
 import java.io.IOException;
 
+import static org.testingisdocumenting.webtau.http.testserver.MultiPartUtils.getPartsStream;
+
 public class TestServerMultiPartContentEcho implements TestServerResponse {
     private final int statusCode;
+    private final int partIdx;
 
     public TestServerMultiPartContentEcho(int statusCode, int partIdx) {
         this.statusCode = statusCode;
+        this.partIdx = partIdx;
     }
 
     @Override
     public byte[] responseBody(Request request) throws IOException, ServletException {
-        return IOUtils.toByteArray(Content.Source.asInputStream(request));
+
+        final var partMaybe = getPartsStream(request).skip(partIdx).findFirst();
+        if(partMaybe.isEmpty()) {
+            throw new ServletException("Part at index %d not found".formatted(partIdx));
+        }
+
+        return IOUtils.toByteArray(Content.Source.asInputStream(partMaybe.get().getContentSource()));
     }
 
     @Override

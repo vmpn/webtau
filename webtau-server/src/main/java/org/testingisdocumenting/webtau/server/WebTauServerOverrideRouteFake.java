@@ -16,9 +16,10 @@
 
 package org.testingisdocumenting.webtau.server;
 
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.server.route.RouteParamsParser;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.function.Function;
 
 /**
@@ -48,7 +49,7 @@ public class WebTauServerOverrideRouteFake implements WebTauServerOverride {
     }
 
     @Override
-    public WebTauServerResponse response(HttpServletRequest request) {
+    public WebTauServerResponse response(Request request) {
         WebTauServerResponse serverResponse = responseFunc.apply(WebTauServerRequest.create(routeParamsParser,
                 request));
         return serverResponse.newResponseWithUpdatedStatusCodeIfRequired(request.getMethod());

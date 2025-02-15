@@ -16,7 +16,8 @@
 
 package org.testingisdocumenting.webtau.server;
 
-import javax.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +52,7 @@ public class WebTauServerOverrideList implements WebTauServerOverride {
     }
 
     @Override
-    public WebTauServerResponse response(HttpServletRequest request) {
+    public WebTauServerResponse response(Request request) {
         Optional<WebTauServerOverride> found = findOverride(request);
         return found.map(override -> override.response(request))
                 .orElseThrow(this::shouldNotHappen);
@@ -63,8 +64,8 @@ public class WebTauServerOverrideList implements WebTauServerOverride {
                 .map(WebTauServerOverride::overrideId).collect(Collectors.joining("\n"));
     }
 
-    private Optional<WebTauServerOverride> findOverride(HttpServletRequest request) {
-        return findOverride(request.getMethod(), request.getRequestURI());
+    private Optional<WebTauServerOverride> findOverride(Request request) {
+        return findOverride(request.getMethod(), request.getHttpURI().getPath());
     }
 
     private Optional<WebTauServerOverride> findOverride(String method, String uri) {

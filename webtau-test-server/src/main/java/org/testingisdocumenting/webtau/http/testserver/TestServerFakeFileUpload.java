@@ -17,9 +17,7 @@
 package org.testingisdocumenting.webtau.http.testserver;
 
 import jakarta.servlet.ServletException;
-import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.MultiPart;
-import org.eclipse.jetty.http.MultiPartFormData;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
@@ -31,14 +29,13 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
+
+import static org.testingisdocumenting.webtau.http.testserver.MultiPartUtils.getPartsList;
 
 public class TestServerFakeFileUpload implements TestServerResponse {
     @Override
     public byte[] responseBody(Request request) throws IOException, ServletException {
-        final var config = Request.getMultiPartConfig(request, null).build();
-        final var parts = MultiPartFormData.getParts(request, request, request.getHeaders().get(HttpHeader.CONTENT_TYPE), config);
-        final var partsList = StreamSupport.stream(parts.spliterator(), false).toList();
+        final var partsList = getPartsList(request);
         final var response = createResponse(partsList);
         return JsonUtils.serialize(response).getBytes();
     }

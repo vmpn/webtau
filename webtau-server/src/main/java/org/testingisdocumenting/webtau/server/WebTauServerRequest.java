@@ -16,12 +16,15 @@
 
 package org.testingisdocumenting.webtau.server;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.server.route.RouteParams;
 import org.testingisdocumenting.webtau.server.route.RouteParamsParser;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.*;
@@ -39,16 +42,16 @@ public class WebTauServerRequest {
     private final Map<String, CharSequence> header;
     private final String fullUrl;
 
-    public static WebTauServerRequest create(RouteParamsParser routeParamsParser, HttpServletRequest request) {
+    public static WebTauServerRequest create(RouteParamsParser routeParamsParser, Request request) {
         try {
-            String queryString = request.getQueryString();
-            return new WebTauServerRequest(routeParamsParser.parse(request.getRequestURI()),
+            String queryString = request.getHttpURI().getQuery();
+            return new WebTauServerRequest(routeParamsParser.parse(request.getHttpURI().getPathQuery()),
                     request.getMethod(),
-                    request.getRequestURI(),
+                    request.getHttpURI().getPath(),
                     queryString,
-                    request.getRequestURL().toString(),
-                    request.getContentType(),
-                    IOUtils.toByteArray(request.getInputStream()),
+                    request.getHttpURI().getPath(),
+                    request.getHeaders().get(HttpHeader.CONTENT_TYPE),
+                    IOUtils.toByteArray(Content.Source.asInputStream(request)),
                     headerFromRequest(request));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -174,7 +177,7 @@ public class WebTauServerRequest {
         return values.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(values);
     }
 
-    private static Map<String, CharSequence> headerFromRequest(HttpServletRequest request) {
+    private static Map<String, CharSequence> headerFromRequest(Request request) {
         Map<String, CharSequence> header = new LinkedHashMap<>();
 
         Enumeration<String> headerNames = request.getHeaderNames();

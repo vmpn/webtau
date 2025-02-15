@@ -16,7 +16,8 @@
 
 package org.testingisdocumenting.webtau.server;
 
-import javax.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
+
 import java.util.Collections;
 
 class WebTauServerOverrideFailedResponse implements WebTauServerOverride {
@@ -36,7 +37,7 @@ class WebTauServerOverrideFailedResponse implements WebTauServerOverride {
     }
 
     @Override
-    public WebTauServerResponse response(HttpServletRequest request) {
+    public WebTauServerResponse response(Request request) {
         return new WebTauServerResponse(500, "application/json", new byte[0], Collections.emptyMap());
     }
 }

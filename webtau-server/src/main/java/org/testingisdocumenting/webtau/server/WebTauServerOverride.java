@@ -16,10 +16,14 @@
 
 package org.testingisdocumenting.webtau.server;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 
 /**
  * Server can register a response based on low-level servlet request.
@@ -29,22 +33,18 @@ public interface WebTauServerOverride {
 
     String overrideId();
 
-    WebTauServerResponse response(HttpServletRequest request);
+    WebTauServerResponse response(Request request);
 
-    default void apply(HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+    default void apply(Request servletRequest, Response servletResponse, Callback callback) {
         WebTauServerResponse serverResponse = response(servletRequest);
-        serverResponse.getHeader().forEach((k, v) -> servletResponse.addHeader(k, v.toString()));
+        serverResponse.getHeader().forEach((k, v) -> servletResponse.getHeaders().add(k, v.toString()));
 
-        try {
-            byte[] responseBody = serverResponse.getContent();
-            servletResponse.setStatus(serverResponse.getStatusCode());
-            servletResponse.setContentType(serverResponse.getContentType());
+        byte[] responseBody = serverResponse.getContent();
+        servletResponse.setStatus(serverResponse.getStatusCode());
+        servletResponse.getHeaders().add(HttpHeader.CONTENT_TYPE, serverResponse.getContentType());
 
-            if (responseBody != null) {
-                servletResponse.getOutputStream().write(responseBody);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        if (responseBody != null) {
+            servletResponse.write(true, ByteBuffer.wrap(responseBody), callback);
         }
     }
 }

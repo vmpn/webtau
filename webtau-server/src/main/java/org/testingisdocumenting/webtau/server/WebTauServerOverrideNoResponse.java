@@ -16,6 +16,8 @@
 
 package org.testingisdocumenting.webtau.server;
 
+import org.eclipse.jetty.server.Request;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 
@@ -38,7 +40,7 @@ class WebTauServerOverrideNoResponse implements WebTauServerOverride {
     }
 
     @Override
-    public WebTauServerResponse response(HttpServletRequest request) {
+    public WebTauServerResponse response(Request request) {
         try {
             synchronized (sleepLock) {
                 sleepLock.wait();

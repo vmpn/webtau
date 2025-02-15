@@ -69,7 +69,7 @@ public class GraphQLResponseHandler extends Handler.Abstract {
     @Override
     public boolean handle(Request request, Response response, Callback callback) throws Exception {
         if (request.getHttpURI().getPath().startsWith("/graphql")) {
-            handleGraphQLPathRequest(request, response);
+            handleGraphQLPathRequest(request, response, callback);
         } else if (additionalHandler.isPresent()) {
             additionalHandler.get().handle(request, response, callback);
         } else {
@@ -103,9 +103,10 @@ public class GraphQLResponseHandler extends Handler.Abstract {
         }
     }
 
-    private void handleGraphQLPathRequest(Request request, Response response) throws IOException {
+    private void handleGraphQLPathRequest(Request request, Response response, Callback callback) throws IOException {
         if (!isAuthenticated(request)) {
             response.setStatus(401);
+            callback.succeeded();
             return;
         }
 
@@ -122,6 +123,7 @@ public class GraphQLResponseHandler extends Handler.Abstract {
             Map<String, Object> variables = (Map<String, Object>) JsonUtils.deserializeAsMap(parameters.getValue("variables"));
 
             handle(query, operationName, variables, response);
+            callback.succeeded();
         } else if ("POST".equals(request.getMethod())) {
             // Don't currently support the query param for POST
             if ("application/json".equals(request.getHeaders().get(HttpHeader.CONTENT_TYPE))) {
@@ -133,11 +135,14 @@ public class GraphQLResponseHandler extends Handler.Abstract {
                 Map<String, Object> variables = (Map<String, Object>) requestBody.get("variables");
 
                 handle(query, operationName, variables, response);
+                callback.succeeded();
             } else if ("application/graphql".equals(request.getHeaders().get(HttpHeader.CONTENT_TYPE))) {
                 String query = Content.Source.asString(request, StandardCharsets.UTF_8).lines().collect(Collectors.joining());
                 handle(query, (String) null, null, response);
+                callback.succeeded();
             } else {
                 response.setStatus(415);
+                callback.succeeded();
             }
         } else {
             response.setStatus(405);
