@@ -17,6 +17,7 @@
 
 package org.testingisdocumenting.webtau.http
 
+import org.eclipse.jetty.server.Request
 import org.junit.Test
 import org.testingisdocumenting.webtau.data.traceable.CheckLevel
 import org.testingisdocumenting.webtau.data.datanode.DataNode
@@ -30,7 +31,6 @@ import org.testingisdocumenting.webtau.time.Time
 import org.testingisdocumenting.webtau.utils.JsonUtils
 import org.testingisdocumenting.webtau.utils.ResourceUtils
 
-import javax.servlet.http.HttpServletRequest
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDate
@@ -532,13 +532,13 @@ class HttpGroovyTest extends HttpTestBase {
         def counter = [:].withDefault { 0 }
         def responseCounter = { statusCode -> new TestServerResponse() {
             @Override
-            byte[] responseBody(HttpServletRequest request) {
+            byte[] responseBody(Request request) {
                 counter[request.method]++
                 return "".bytes
             }
 
             @Override
-            String responseType(HttpServletRequest request) {
+            String responseType(Request request) {
                 return "application/json"
             }
 
