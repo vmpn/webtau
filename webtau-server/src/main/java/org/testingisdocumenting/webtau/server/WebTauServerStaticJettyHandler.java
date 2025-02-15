@@ -21,10 +21,6 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.Callback;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Optional;
 
 public class WebTauServerStaticJettyHandler extends ResourceHandler {
@@ -42,7 +38,7 @@ public class WebTauServerStaticJettyHandler extends ResourceHandler {
 
         if (optionalOverride.isPresent()) {
             WebTauServerOverride override = optionalOverride.get();
-            override.apply(request, response);
+            override.apply(request, response, callback);
             callback.succeeded();
             return true;
         } else {

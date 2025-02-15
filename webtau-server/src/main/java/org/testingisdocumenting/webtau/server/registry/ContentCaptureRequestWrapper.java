@@ -16,100 +16,102 @@
 
 package org.testingisdocumenting.webtau.server.registry;
 
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import java.io.ByteArrayOutputStream;
+import jakarta.servlet.ServletInputStream;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Request;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class ContentCaptureRequestWrapper extends HttpServletRequestWrapper {
-    private final HttpServletRequest request;
-    private final ByteArrayOutputStream capture;
+public class ContentCaptureRequestWrapper extends Request.Wrapper {
+    private final List<CapturingChunk> capturingChunks = new LinkedList<>();
 
     private ServletInputStream input;
 
-    public ContentCaptureRequestWrapper(HttpServletRequest request) {
+    public ContentCaptureRequestWrapper(Request request) {
         super(request);
-        this.request = request;
-        this.capture = new ByteArrayOutputStream(1024);
     }
 
     @Override
-    public ServletInputStream getInputStream() {
-        if (input != null) {
-            return input;
-        }
+    public void demand(Runnable demandCallback) {
+        super.demand(demandCallback);
+    }
 
-        ServletInputStream originalInputStream;
-        try {
-            originalInputStream = request.getInputStream();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        input = new ServletInputStream() {
-            @Override
-            public boolean isFinished() {
-                return originalInputStream.isFinished();
-            }
-
-            @Override
-            public void setReadListener(ReadListener readListener) {
-                originalInputStream.setReadListener(readListener);
-            }
-
-            @Override
-            public int read() throws IOException {
-                int b = originalInputStream.read();
-                if (b != -1) {
-                    capture.write(b);
-                }
-
-                return b;
-            }
-
-            @Override
-            public void close() throws IOException {
-                originalInputStream.close();
-                capture.close();
-            }
-
-            @Override
-            public boolean isReady() {
-                return originalInputStream.isReady();
-            }
-        };
-
-        return input;
+    @Override
+    public Content.Chunk read() {
+        final var capturingChunk = new CapturingChunk(super.read());
+        capturingChunks.add(capturingChunk);
+        return capturingChunk;
     }
 
     public byte[] getCaptureAsBytes() throws IOException {
-        return capture.toByteArray();
-    }
+        final var totalDataSize = capturingChunks.stream().map(CapturingChunk::getRead).filter(Objects::nonNull)
+                .mapToInt(read -> read.length).sum();
+        final var data = new byte[totalDataSize];
 
-    public void close() {
-        if (input == null) {
-            return;
-        }
+        final var index = new AtomicInteger(0);
+        capturingChunks.stream()
+                .map(CapturingChunk::getRead)
+                .filter(Objects::nonNull)
+                .forEach(bytes ->
+                {
+                    System.arraycopy(bytes, 0, data, index.get(), bytes.length);
+                    index.addAndGet(bytes.length);
+                });
 
-        try {
-            input.close();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return data;
     }
 
     public String getCaptureAsString() {
         try {
-            String charsetName = getCharacterEncoding();
+            String charsetName = getWrapped().getHeaders().get(HttpHeader.CONTENT_ENCODING);
 
             return charsetName != null ?
                     new String(getCaptureAsBytes(), charsetName):
                     new String(getCaptureAsBytes());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static class CapturingChunk implements Content.Chunk {
+
+        private byte[] read = null;
+        private ByteBuffer readBuffer = null;
+        private final Content.Chunk delegate;
+
+        private CapturingChunk(Content.Chunk delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public ByteBuffer getByteBuffer() {
+            if(read == null) {
+                final var byteBuffer = delegate.getByteBuffer();
+                if (!byteBuffer.hasRemaining()) {
+                    return byteBuffer;
+                }
+
+                read = new byte[byteBuffer.remaining()];
+                byteBuffer.get(read);
+                readBuffer = ByteBuffer.wrap(read);
+            }
+            return readBuffer;
+        }
+
+        public byte[] getRead() {
+            return read;
+        }
+
+        @Override
+        public boolean isLast() {
+            return delegate.isLast();
         }
     }
 }

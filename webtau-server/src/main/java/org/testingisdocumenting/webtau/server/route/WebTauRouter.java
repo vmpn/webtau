@@ -16,9 +16,13 @@
 
 package org.testingisdocumenting.webtau.server.route;
 
-import org.testingisdocumenting.webtau.server.*;
+import org.eclipse.jetty.server.Request;
+import org.testingisdocumenting.webtau.server.WebTauServerOverride;
+import org.testingisdocumenting.webtau.server.WebTauServerOverrideList;
+import org.testingisdocumenting.webtau.server.WebTauServerOverrideRouteFake;
+import org.testingisdocumenting.webtau.server.WebTauServerRequest;
+import org.testingisdocumenting.webtau.server.WebTauServerResponse;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.function.Function;
 
 public class WebTauRouter implements WebTauServerOverride {
@@ -39,7 +43,7 @@ public class WebTauRouter implements WebTauServerOverride {
     }
 
     @Override
-    public WebTauServerResponse response(HttpServletRequest request) {
+    public WebTauServerResponse response(Request request) {
         return overrideList.response(request);
     }
 

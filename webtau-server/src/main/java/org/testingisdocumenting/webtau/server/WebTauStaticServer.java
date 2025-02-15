@@ -51,7 +51,7 @@ class WebTauStaticServer extends WebTauJettyServer {
     protected Handler createJettyHandler() {
         ResourceHandler handler = new WebTauServerStaticJettyHandler(serverId);
         try {
-            handler.setBaseResource(Resource.newResource(path.toRealPath()));
+            handler.setBaseResourceAsString(path.toRealPath().toAbsolutePath().toString());
             return handler;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

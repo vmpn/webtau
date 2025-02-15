@@ -16,7 +16,6 @@
 
 package org.testingisdocumenting.webtau.server;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.io.Content;
@@ -27,7 +26,11 @@ import org.testingisdocumenting.webtau.utils.JsonUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class WebTauServerRequest {
     private final String method;
@@ -179,13 +182,7 @@ public class WebTauServerRequest {
 
     private static Map<String, CharSequence> headerFromRequest(Request request) {
         Map<String, CharSequence> header = new LinkedHashMap<>();
-
-        Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String name = headerNames.nextElement();
-            header.put(name, request.getHeader(name));
-        }
-
+        request.getHeaders().forEach(h -> header.put(h.getName(), h.getValue()));
         return header;
     }
 }

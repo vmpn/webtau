@@ -16,103 +16,64 @@
 
 package org.testingisdocumenting.webtau.server.registry;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import java.io.*;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 
-public class ContentCaptureResponseWrapper extends HttpServletResponseWrapper {
-    private final HttpServletResponse response;
-    private final ByteArrayOutputStream capture;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
-    private ServletOutputStream output;
+public class ContentCaptureResponseWrapper extends Response.Wrapper {
 
-    public ContentCaptureResponseWrapper(HttpServletResponse response) {
-        super(response);
-        this.response = response;
-        this.capture = new ByteArrayOutputStream(response.getBufferSize());
+    private final List<byte[]> captures = new LinkedList<>();
+    private final String outputEncoding;
+
+    public ContentCaptureResponseWrapper(Request request, Response response) {
+        super(request, response);
+        this.outputEncoding = response.getHeaders().get(HttpHeader.CONTENT_ENCODING);
     }
 
     @Override
-    public ServletOutputStream getOutputStream() {
-        if (output != null) {
-            return output;
+    public void write(boolean last, ByteBuffer byteBuffer, Callback callback) {
+        if(!byteBuffer.hasRemaining()) {
+            super.write(last, byteBuffer, callback);
         }
 
-        ServletOutputStream originalOutputStream;
-        try {
-            originalOutputStream = response.getOutputStream();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        output = new ServletOutputStream() {
-            @Override
-            public void write(int b) throws IOException {
-                originalOutputStream.write(b);
-                capture.write(b);
-            }
-
-            @Override
-            public void flush() throws IOException {
-                originalOutputStream.flush();
-                capture.flush();
-            }
-
-            @Override
-            public void close() throws IOException {
-                originalOutputStream.close();
-                capture.close();
-            }
-
-            @Override
-            public boolean isReady() {
-                return originalOutputStream.isReady();
-            }
-
-            @Override
-            public void setWriteListener(WriteListener listener) {
-                originalOutputStream.setWriteListener(listener);
-            }
-        };
-
-        return output;
-    }
-
-    @Override
-    public PrintWriter getWriter() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void flushBuffer() throws IOException {
-        super.flushBuffer();
-
-        if (output != null) {
-            output.flush();
-        }
+        final var data = new byte[byteBuffer.remaining()];
+        byteBuffer.get(data);
+        captures.add(data);
+        super.write(last, ByteBuffer.wrap(data), callback);
     }
 
     public byte[] getCaptureAsBytes() throws IOException {
-        return capture.toByteArray();
+        final var totalDataSize = captures.stream().mapToInt(read -> read.length).sum();
+        final var data = new byte[totalDataSize];
+
+        final var index = new AtomicInteger(0);
+        captures.forEach(bytes ->
+                {
+                    System.arraycopy(bytes, 0, data, index.get(), bytes.length);
+                    index.addAndGet(bytes.length);
+                });
+
+        return data;
     }
 
     public void close() {
-        if (output == null) {
-            return;
-        }
-
-        try {
-            output.close();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     public String getCaptureAsString() {
         try {
-            return new String(getCaptureAsBytes(), getCharacterEncoding());
+            return outputEncoding != null ?
+                    new String(getCaptureAsBytes(), outputEncoding):
+                    new String(getCaptureAsBytes());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

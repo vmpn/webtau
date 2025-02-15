@@ -16,8 +16,10 @@
 
 package org.testingisdocumenting.webtau.server.registry;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -46,21 +48,21 @@ public class WebTauServerHandledRequest {
         capturedResponse = "[null handled request: captured response]";
     }
 
-    public WebTauServerHandledRequest(HttpServletRequest request, HttpServletResponse response,
+    public WebTauServerHandledRequest(Request request, Response response,
                                       long startTime,
                                       long endTime,
                                       String capturedRequest,
                                       String capturedResponse) {
         this.method = request.getMethod();
-        this.url = request.getRequestURI();
+        this.url = request.getHttpURI().getPathQuery();
         this.statusCode = response.getStatus();
         this.requestType = requestContentTypeOrEmpty(request);
-        this.responseType = response.getContentType();
+        this.responseType = response.getHeaders().get(HttpHeader.CONTENT_TYPE);
         this.startTime = startTime;
         this.elapsedTime = endTime - startTime;
 
-        this.capturedRequest = extractContent(request.getContentType(), capturedRequest);
-        this.capturedResponse = extractContent(response.getContentType(), capturedResponse);
+        this.capturedRequest = extractContent(request.getHeaders().get(HttpHeader.CONTENT_TYPE), capturedRequest);
+        this.capturedResponse = extractContent(response.getHeaders().get(HttpHeader.CONTENT_TYPE), capturedResponse);
     }
 
     public String getMethod() {
@@ -128,8 +130,8 @@ public class WebTauServerHandledRequest {
                         contentType.contains("xml"));
     }
 
-    private String requestContentTypeOrEmpty(HttpServletRequest request) {
-        String contentType = request.getContentType();
+    private String requestContentTypeOrEmpty(Request request) {
+        String contentType = request.getHeaders().get(HttpHeader.CONTENT_TYPE);
         return contentType != null ? contentType : "";
     }
 }

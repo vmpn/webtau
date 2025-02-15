@@ -18,13 +18,12 @@ package org.testingisdocumenting.webtau.server.registry;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.Callback;
 import org.testingisdocumenting.webtau.time.Time;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.util.EventListener;
 
 public class WebTauServerJournalJettyHandler implements Handler {
     private final WebTauServerJournal journal;
@@ -36,13 +35,13 @@ public class WebTauServerJournalJettyHandler implements Handler {
     }
 
     @Override
-    public void handle(String uri, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+    public boolean handle(Request request, Response response, Callback callback) throws Exception {
         long startTime = Time.currentTimeMillis();
         ContentCaptureRequestWrapper captureRequestWrapper = new ContentCaptureRequestWrapper(request);
-        ContentCaptureResponseWrapper captureResponseWrapper = new ContentCaptureResponseWrapper(response);
+        ContentCaptureResponseWrapper captureResponseWrapper = new ContentCaptureResponseWrapper(captureRequestWrapper, response);
 
         try {
-            delegate.handle(uri, baseRequest, captureRequestWrapper, captureResponseWrapper);
+            final var result = delegate.handle(captureRequestWrapper, captureResponseWrapper, callback);
             long endTime = Time.currentTimeMillis();
 
             WebTauServerHandledRequest handledRequest = new WebTauServerHandledRequest(request, response,
@@ -50,6 +49,7 @@ public class WebTauServerJournalJettyHandler implements Handler {
                     captureRequestWrapper.getCaptureAsString(),
                     captureResponseWrapper.getCaptureAsString());
             journal.registerCall(handledRequest);
+            return result;
         } finally {
             captureResponseWrapper.close();
         }
@@ -111,12 +111,12 @@ public class WebTauServerJournalJettyHandler implements Handler {
     }
 
     @Override
-    public void addLifeCycleListener(Listener listener) {
-        delegate.addLifeCycleListener(listener);
+    public boolean addEventListener(EventListener eventListener) {
+        return delegate.addEventListener(eventListener);
     }
 
     @Override
-    public void removeLifeCycleListener(Listener listener) {
-        delegate.removeLifeCycleListener(listener);
+    public boolean removeEventListener(EventListener eventListener) {
+        return delegate.removeEventListener(eventListener);
     }
 }
