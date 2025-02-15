@@ -27,7 +27,7 @@
     <artifactId>webtau-repl</artifactId>
 
     <properties>
-        <jline.version>3.19.0</jline.version>
+        <jline.version>3.24.1</jline.version>
     </properties>
 
     <dependencies>
