@@ -17,7 +17,9 @@
 package org.testingisdocumenting.webtau.server;
 
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.Callback;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -33,17 +35,18 @@ public class WebTauServerStaticJettyHandler extends ResourceHandler {
     }
 
     @Override
-    public void handle(String uri, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+    public boolean handle(Request request, Response response, Callback callback) throws Exception {
         Optional<WebTauServerOverride> optionalOverride = WebTauServerGlobalOverrides.findOverride(serverId,
                 request.getMethod(),
-                request.getRequestURI());
+                request.getHttpURI().getPathQuery());
 
         if (optionalOverride.isPresent()) {
             WebTauServerOverride override = optionalOverride.get();
             override.apply(request, response);
-            baseRequest.setHandled(true);
+            callback.succeeded();
+            return true;
         } else {
-            super.handle(uri, baseRequest, request, response);
+            return super.handle(request, response, callback);
         }
     }
 }

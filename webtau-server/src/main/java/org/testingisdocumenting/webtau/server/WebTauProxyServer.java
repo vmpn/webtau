@@ -16,9 +16,9 @@
 
 package org.testingisdocumenting.webtau.server;
 
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 
 import java.util.Collections;
 import java.util.Map;

@@ -16,9 +16,11 @@
 
 package org.testingisdocumenting.webtau.server;
 
-import org.eclipse.jetty.client.api.Response;
-import org.eclipse.jetty.client.api.Result;
-import org.eclipse.jetty.proxy.AsyncMiddleManServlet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.client.Response;
+import org.eclipse.jetty.client.Result;
 import org.eclipse.jetty.util.Callback;
 import org.testingisdocumenting.webtau.server.registry.ContentCaptureRequestWrapper;
 import org.testingisdocumenting.webtau.server.registry.ContentCaptureResponseWrapper;
@@ -26,9 +28,6 @@ import org.testingisdocumenting.webtau.server.registry.WebTauServerHandledReques
 import org.testingisdocumenting.webtau.server.registry.WebTauServerJournal;
 import org.testingisdocumenting.webtau.time.Time;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
