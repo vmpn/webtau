@@ -74,6 +74,7 @@ public class GraphQLResponseHandler extends Handler.Abstract {
             additionalHandler.get().handle(request, response, callback);
         } else {
             response.setStatus(404);
+            callback.succeeded();
         }
 
         return true;
