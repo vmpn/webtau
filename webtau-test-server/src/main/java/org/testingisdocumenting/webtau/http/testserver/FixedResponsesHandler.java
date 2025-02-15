@@ -73,8 +73,9 @@ public class FixedResponsesHandler extends Handler.Abstract {
             if (responseBody != null) {
                 response.getHeaders().add(HttpHeader.CONTENT_LENGTH, responseBody.length);
                 response.write(true, ByteBuffer.wrap(responseBody), callback);
+            } else {
+                callback.succeeded();
             }
-            callback.succeeded();
         }
 
         return true;

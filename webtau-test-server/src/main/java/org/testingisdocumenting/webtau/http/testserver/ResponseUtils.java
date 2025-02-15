@@ -11,7 +11,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class ResponseUtils {
-    private final static Set<String> NON_ECHOED_HEADERS = Set.of(HttpHeader.CONTENT_LENGTH.lowerCaseName());
+    private final static Set<String> NON_ECHOED_HEADERS = Set.of(
+            HttpHeader.CONTENT_LENGTH.lowerCaseName(),
+            HttpHeader.CONTENT_TYPE.lowerCaseName());
     public static Map<String, String> echoHeaders(Request request) {
         Map<String, String> header = new LinkedHashMap<>();
 
