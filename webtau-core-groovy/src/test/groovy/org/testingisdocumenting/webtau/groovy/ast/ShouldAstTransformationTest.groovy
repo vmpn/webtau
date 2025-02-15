@@ -17,6 +17,7 @@
 
 package org.testingisdocumenting.webtau.groovy.ast
 
+import org.junit.Test
 import org.testingisdocumenting.webtau.data.ValuePath
 import org.testingisdocumenting.webtau.expectation.ExpectationHandler
 import org.testingisdocumenting.webtau.expectation.ExpectationHandlers
@@ -32,21 +33,24 @@ import org.testingisdocumenting.webtau.reporter.TokenizedMessage
 import static org.testingisdocumenting.webtau.WebTauCore.*
 import static org.testingisdocumenting.webtau.testutils.TestConsoleOutput.runExpectExceptionAndValidateOutput
 
-class ShouldAstTransformationTest extends GroovyTestCase {
+class ShouldAstTransformationTest {
+    @Test
     void testShouldNotTransformation() {
         runExpectExceptionAndValidateOutput(AssertionError, "X failed expecting [value] to not equal 2:\n" +
                 "      actual: 2 <java.lang.Integer>\n" +
                 "    expected: not 2 <java.lang.Integer> (Xms)") {
-            assertScript('2.shouldNot == 2')
+            2.shouldNot == 2
         }
     }
 
+    @Test
     void testShouldTransformationOnNull() {
         code {
-            assertScript('3.should == null')
+            3.should == null
         } should throwException(AssertionError)
     }
 
+    @Test
     void testShouldTransformationOnMap() {
         runExpectExceptionAndValidateOutput(AssertionError, 'X failed expecting [value] to equal {"a": 3}:\n' +
                 '    mismatches:\n' +
@@ -59,21 +63,23 @@ class ShouldAstTransformationTest extends GroovyTestCase {
                 '    [value].b: 2 (Xms)\n' +
                 '  \n' +
                 '  {"a": **1**, "b": **2**}') {
-            assertScript('[a:1, b:2].should == [a: 3]')
+            [a:1, b:2].should == [a: 3]
         }
     }
 
+    @Test
     void testInsideClosure() {
         code {
-            assertScript("""
+
             def code = { ->
                 2.shouldNot == 2
             }
             
-            code() """)
+            code()
         } should throwException(AssertionError)
     }
 
+    @Test
     void testOperationsOverload() {
         def failedMatchers = []
 
@@ -86,18 +92,18 @@ class ShouldAstTransformationTest extends GroovyTestCase {
         }
 
         ExpectationHandlers.withAdditionalHandler(expectationHandler) {
-            assertScript("3.should == 2")
-            assertScript("3.should != 3")
+            3.should == 2
+            3.should != 3
 
-            assertScript("3.shouldBe < 2")
-            assertScript("3.shouldBe <= 2")
-            assertScript("2.shouldBe > 3")
-            assertScript("2.shouldBe >= 3")
+            3.shouldBe < 2
+            3.shouldBe <= 2
+            2.shouldBe > 3
+            2.shouldBe >= 3
 
-            assertScript("3.shouldNotBe > 2")
-            assertScript("3.shouldNotBe >= 2")
-            assertScript("2.shouldNotBe < 3")
-            assertScript("2.shouldNotBe <= 3")
+            3.shouldNotBe > 2
+            3.shouldNotBe >= 2
+            2.shouldNotBe < 3
+            2.shouldNotBe <= 3
         }
 
         failedMatchers.should == [
