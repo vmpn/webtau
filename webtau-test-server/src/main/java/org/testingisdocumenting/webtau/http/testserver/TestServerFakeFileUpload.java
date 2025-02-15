@@ -17,7 +17,9 @@
 package org.testingisdocumenting.webtau.http.testserver;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Part;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.MultiPart;
+import org.eclipse.jetty.http.MultiPartFormData;
 import org.eclipse.jetty.io.Content;
 import org.eclipse.jetty.server.Request;
 import org.testingisdocumenting.webtau.utils.JsonUtils;
@@ -29,12 +31,16 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 public class TestServerFakeFileUpload implements TestServerResponse {
     @Override
     public byte[] responseBody(Request request) throws IOException, ServletException {
-
-        return JsonUtils.serialize(Content.Source.asString(request, StandardCharsets.UTF_8)).getBytes();
+        final var config = Request.getMultiPartConfig(request, null).build();
+        final var parts = MultiPartFormData.getParts(request, request, request.getHeaders().get(HttpHeader.CONTENT_TYPE), config);
+        final var partsList = StreamSupport.stream(parts.spliterator(), false).toList();
+        final var response = createResponse(partsList);
+        return JsonUtils.serialize(response).getBytes();
     }
 
     @Override
@@ -47,25 +53,25 @@ public class TestServerFakeFileUpload implements TestServerResponse {
         return 201;
     }
 
-    private Map<String, Object> createResponse(Collection<Part> parts) {
-        Optional<Part> file = findPart(parts, "file");
-        Optional<Part> descriptionPart = findPart(parts, "fileDescription");
+    private Map<String, Object> createResponse(Collection<MultiPart.Part> parts) {
+        Optional<MultiPart.Part> file = findPart(parts, "file");
+        Optional<MultiPart.Part> descriptionPart = findPart(parts, "fileDescription");
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("timestamp", System.currentTimeMillis());
-        result.put("fileName", file.map(Part::getSubmittedFileName).orElse("backend-generated-name-as-no-name-provided"));
+        result.put("fileName", file.map(MultiPart.Part::getFileName).orElse("backend-generated-name-as-no-name-provided"));
         result.put("description", descriptionPart.map(this::extractContent).orElse(null));
 
         return result;
     }
 
-    private Optional<Part> findPart(Collection<Part> parts, String name) {
+    private Optional<MultiPart.Part> findPart(Collection<MultiPart.Part> parts, String name) {
         return parts.stream().filter(p -> p.getName().equals(name)).findFirst();
     }
 
-    private String extractContent(Part p) {
+    private String extractContent(MultiPart.Part p) {
         try {
-            return IOUtils.toString(p.getInputStream(), "UTF-8");
+            return IOUtils.toString(Content.Source.asInputStream(p.getContentSource()), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
