@@ -17,6 +17,7 @@
 
 package org.testingisdocumenting.webtau.featuretesting
 
+import org.eclipse.jetty.server.Request
 import org.testingisdocumenting.webtau.http.testserver.FixedResponsesHandler
 import org.testingisdocumenting.webtau.http.testserver.TestServer
 import org.testingisdocumenting.webtau.http.testserver.TestServerJsonResponse
@@ -28,8 +29,6 @@ import org.testingisdocumenting.webtau.utils.JsonUtils
 import org.testingisdocumenting.webtau.utils.ResourceUtils
 
 import javax.servlet.ServletException
-import javax.servlet.http.HttpServletRequest
-import java.nio.charset.StandardCharsets
 
 class WebTauRestFeaturesTestData {
     static void registerEndPoints(TestServer testServer, FixedResponsesHandler handler) {
@@ -55,8 +54,8 @@ class WebTauRestFeaturesTestData {
 
     static class BalancePerPersonaResponse implements TestServerResponse {
         @Override
-        byte[] responseBody(HttpServletRequest request) throws IOException, ServletException {
-            def authz = request.getHeader("Authorization")
+        byte[] responseBody(Request request) throws IOException, ServletException {
+            def authz = request.getHeaders().get("Authorization")
             def balance = authz.contains('alice') ? 150 : 30
 
             def response = JsonUtils.serialize([balance: balance])
@@ -64,7 +63,7 @@ class WebTauRestFeaturesTestData {
         }
 
         @Override
-        String responseType(HttpServletRequest request) {
+        String responseType(Request request) {
             return "application/json"
         }
     }

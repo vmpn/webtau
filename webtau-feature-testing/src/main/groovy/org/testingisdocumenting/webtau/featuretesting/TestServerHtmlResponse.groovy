@@ -16,9 +16,8 @@
 
 package org.testingisdocumenting.webtau.featuretesting
 
+import org.eclipse.jetty.server.Request
 import org.testingisdocumenting.webtau.http.testserver.TestServerResponse
-
-import javax.servlet.http.HttpServletRequest
 
 class TestServerHtmlResponse implements TestServerResponse {
     private String response
@@ -28,12 +27,12 @@ class TestServerHtmlResponse implements TestServerResponse {
     }
 
     @Override
-    byte[] responseBody(HttpServletRequest request) {
+    byte[] responseBody(Request request) {
         return response.getBytes()
     }
 
     @Override
-    String responseType(HttpServletRequest request) {
+    String responseType(Request request) {
         return "text/html"
     }
 }
